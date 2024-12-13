@@ -1,5 +1,17 @@
 # Hand Gesture Control for Unitree Robots
-Python interface for hand gesture control of unitree_go2_robot
+Python interface for hand gesture control of unitree_go2_robot. In this project we used OpenCV and Mediapipe.
+
+# Demo
+From third person standpoint  
+
+https://github.com/user-attachments/assets/54a42c59-c0c0-4a55-8ecb-3b49060b8116
+
+From robot standpoint
+
+
+https://github.com/user-attachments/assets/bb01ecc9-5808-4beb-b1c6-61ed2f0799c1
+
+
 
 # Installation
 ## Dependencies
