@@ -1,5 +1,5 @@
-# unitree_sdk2_python
-Python interface for unitree sdk2
+# Hand Gesture Control for Unitree Robots
+Python interface for hand gesture control of unitree_go2_robot
 
 # Installation
 ## Dependencies
@@ -58,61 +58,9 @@ python3 ./example/helloworld/subscriber.py
 You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
 ## High-Level Status and Control
 The high-level interface maintains consistency with unitree_sdk2 in terms of data structure and control methods. For detailed information, refer to https://support.unitree.com/home/en/developer/sports_services.
-### High-Level Status
+### Run Hand Gesture Control 
 Execute the following command in the terminal:
 ```bash
-python3 ./example/high_level/read_highstate.py enp2s0
+python3 ./example/high_level/hand_gesture_front_camera.py enp2s0
 ```
 Replace `enp2s0` with the name of the network interface to which the robot is connected,.
-### High-Level Control
-Execute the following command in the terminal:
-```bash
-python3 ./example/high_level/sportmode_test.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected. This example program provides several test methods, and you can choose the required tests as follows:
-```python
-test.StandUpDown() # Stand up and lie down
-# test.VelocityMove() # Velocity control
-# test.BalanceAttitude() # Attitude control
-# test.TrajectoryFollow() # Trajectory tracking
-# test.SpecialMotions() # Special motions
-```
-## Low-Level Status and Control
-The low-level interface maintains consistency with unitree_sdk2 in terms of data structure and control methods. For detailed information, refer to https://support.unitree.com/home/en/developer/Basic_services.
-### Low-Level Status
-Execute the following command in the terminal:
-```bash
-python3 ./example/low_level/lowlevel_control.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected. The program will output the state of the right front leg hip joint, IMU, and battery voltage.
-### Low-Level Motor Control
-First, use the app to turn off the high-level motion service (sport_mode) to prevent conflicting instructions.
-Execute the following command in the terminal:
-```bash
-python3 ./example/low_level/lowlevel_control.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected. The left hind leg hip joint will maintain a 0-degree position (for safety, set kp=10, kd=1), and the left hind leg calf joint will continuously output 1Nm of torque.
-## Wireless Controller Status
-Execute the following command in the terminal:
-```bash
-python3 ./example/wireless_controller/wireless_controller.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected. The terminal will output the status of each key. For the definition and data structure of the remote control keys, refer to https://support.unitree.com/home/en/developer/Get_remote_control_status.
-## Front Camera
-Use OpenCV to obtain the front camera (ensure to run on a system with a graphical interface, and press ESC to exit the program):
-```bash
-python3 ./example/front_camera/camera_opencv.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected.
-
-## Obstacle Avoidance Switch
-```bash
-python3 ./example/obstacles_avoid_switch/obstacles_avoid_switch.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected. The robot will cycle obstacle avoidance on and off. For details on the obstacle avoidance service, see https://support.unitree.com/home/en/developer/ObstaclesAvoidClient
-
-## Light and volume control
-```bash
-python3 ./example/vui_client/vui_client_example.py enp2s0
-```
-Replace `enp2s0` with the name of the network interface to which the robot is connected.T he robot will cycle the volume and light brightness. The interface is detailed at https://support.unitree.com/home/en/developer/VuiClient
