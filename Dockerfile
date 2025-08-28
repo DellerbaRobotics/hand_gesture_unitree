@@ -13,9 +13,10 @@ RUN apt update && apt install -y python3.10 python3-pip
 COPY . /app
 WORKDIR /app
 
+RUN apt install -y libglib2.0-0 libsm6 libxrender1 libxext6 ffmpeg libsm6 libxext6 libgl1
 
 RUN pip3.10 install -e .
 
 RUN pip3.10 install -r requirements.txt
 
-CMD ["python3.10", "./example/go2/high_level/hand_gesture_front_camera.py"]
+ENTRYPOINT ["python3.10", "./example/go2/high_level/hand_gesture_front_camera.py"]
