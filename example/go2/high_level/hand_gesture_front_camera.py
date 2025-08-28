@@ -28,12 +28,12 @@ class SportModeTest:
     def StandUp(self):
         self.client.StandUp()
         print("Stand up !!!")
-        time.sleep(1)
+        #time.sleep(1)
 
     def StandDown(self):
         self.client.StandDown()
         print("Stand down !!!")
-        time.sleep(1)
+        #time.sleep(1)
 
 # Robot state
 robot_state = unitree_go_msg_dds__SportModeState_()
