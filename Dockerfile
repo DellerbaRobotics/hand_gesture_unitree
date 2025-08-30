@@ -15,8 +15,8 @@ WORKDIR /app
 
 RUN apt install -y libglib2.0-0 libsm6 libxrender1 libxext6 ffmpeg libsm6 libxext6 libgl1
 
-RUN pip3.10 install -e .
+RUN pip3.10 install -e ./unitreesdk2/.
 
 RUN pip3.10 install -r requirements.txt
 
-ENTRYPOINT ["python3.10", "./example/go2/high_level/hand_gesture_front_camera.py"]
+ENTRYPOINT ["python3.10", "./gesture_camera.py"]
