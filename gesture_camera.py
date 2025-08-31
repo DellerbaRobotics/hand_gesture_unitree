@@ -1,13 +1,13 @@
-import time
-import sys
-from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
-from unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
-from unitree_sdk2py.go2.sport.sport_client import SportClient
-from unitree_sdk2py.go2.video.video_client import VideoClient
-import cv2
-import numpy as np
+from unitreesdk2.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitreesdk2.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
+from unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from unitreesdk2.unitree_sdk2py.go2.sport.sport_client import SportClient
+from unitreesdk2.unitree_sdk2py.go2.video.video_client import VideoClient
+from numpy import ndarray
+
+import sys, time, cv2, argparse
 import mediapipe as mp
+import numpy as np
 
 class SportMode:
     def __init__(self) -> None:
@@ -41,28 +41,67 @@ def HighStateHandler(msg: SportModeState_):
     global robot_state
     robot_state = msg
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        ChannelFactoryInitialize(0, sys.argv[1])
-    else:
-        ChannelFactoryInitialize(0)
-        
-    sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
-    sub.Init(HighStateHandler, 10)
-    time.sleep(1)
+def init_robot(debug: bool, card: str) -> SportMode:
+    if not debug:
+        try:
+            ChannelFactoryInitialize(0, card)
+        except:
+            print("Non è stato possibile collegarsi al cane usando la interfaccia di rete fornita ({card})\n errore di digitazione o di configurazione? chi lo sà :)".format(card=card))
+            exit(0)            
+        sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
+        sub.Init(HighStateHandler, 10)
+        time.sleep(1)
 
-    sport = SportMode()
-    sport.GetInitState(robot_state)
+        sport = SportMode()
+        sport.GetInitState(robot_state)
 
-    print("Sport mode avviata con successo !!!")
+        print("Sport mode avviata con successo !!!")
+        return sport
 
-    client = VideoClient()  # Create a video client
-    client.SetTimeout(3.0)
-    client.Init()
+def getComputerCamera(debug: bool) -> None:
+    if not debug:
+        return
+    
 
-    mp_hands = mp.solutions.hands
-    hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
-    mp_drawing = mp.solutions.drawing_utils
+    # Apri la webcam (0 = webcam predefinita, prova 1 se hai più camere)
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        print("Errore: impossibile aprire la webcam")
+        return
+
+    while True:
+        # Leggi un frame dalla webcam
+        ret, frame = cap.read()
+        if not ret:
+            print("Errore: impossibile leggere il frame")
+            break
+
+
+        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        cv2.imshow("front_camera", frame)
+
+        process_hand(image_rgb, frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyWindow("front_camera")
+            hands.close()
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+def getDogCamera(debug: bool) -> None:
+    if debug:
+        return
+    
+    try:
+        client = VideoClient()
+        client.SetTimeout(3.0)
+        client.Init()
+    except Exception as e:
+        print("C'è stato un problema con la telecamera del cane...\nErrore: {e}".format(e=e))
+        exit(1)
 
     code, data = client.GetImageSample()
 
@@ -78,34 +117,91 @@ if __name__ == "__main__":
 
         # Process the image and detect hand gestures
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        result = hands.process(image_rgb)
+        process_hand(image_rgb, image)
 
-        if result.multi_hand_landmarks:
-            for hand_landmarks in result.multi_hand_landmarks:
-                # Draw hand landmarks
-                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                # Thumb state detection
-                thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                thumb_ip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
-                thumb_state = 'down' if thumb_tip.y > thumb_ip.y else 'up'
+def process_hand(image_data: ndarray, image) -> None:
+    result = hands.process(image_data)
 
-                if thumb_state == 'up':
-                    sport.StandUp()
-                elif thumb_state == 'down':
-                    sport.StandDown()
+    if result.multi_hand_landmarks:
+        for hand_landmarks in result.multi_hand_landmarks:
+            # Draw hand landmarks
+            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+            # Thumb state detection
+            thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+            thumb_ip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
+            arg = 'down' if thumb_tip.y > thumb_ip.y else 'up'
+            print(hand_landmarks)
+            
+            #robot_exec(sport, debug, arg)
 
         # Display image
         cv2.imshow("front_camera", image)
         # Press ESC to stop
         if cv2.waitKey(20) == 27:
-            break
+            exit(0)
 
-    if code != 0:
-        print("Get image sample error. code:", code)
-    else:
-        # Capture an image
-        cv2.imwrite("front_image.jpg", image)
 
-    cv2.destroyWindow("front_camera")
-    hands.close()
+
+# def getCameraInput(debug: bool):
+#     if debug:
+        
+#         return getComputerCamera(debug)
+    
+#     try:
+#         client = VideoClient()  # Create a video client
+#         client.SetTimeout(3.0)
+#         client.Init()
+#     except Exception as e:
+#         print("C'è stato un problema con la telecamera del cane...\nErrore: {e}".format(e=e))
+#         exit(1)
+
+#     return client.GetImageSample()
+
+def robot_exec(sport: SportMode, debug: bool, arg: str) -> None:
+
+    if debug:
+        return
+    
+    cmd_f = [sport.StandUp, sport.StandDown]
+    cmd   = ["up", "down"]
+
+    for i in range(cmd):
+        if arg.lower() == cmd[i]:
+            cmd_f[i]()
+            return
+    
+    print("La funzione richiesta non è stata trovata!")
+
+if __name__ == "__main__":
+    
+    a = argparse.ArgumentParser(
+        prog="Gesture Camera", 
+        description="Con questo programma sarà possibile comandare il cane della unitree (go2) con il movimento delle mani", 
+        epilog="Creato dall'IISS Luigi dell'erba")
+    
+    a.add_argument("-internet_card", required=False, default="")
+    a.add_argument("-d", "--debug", default=False)
+
+    args = a.parse_args()
+
+    debug = args.debug
+    card = args.internet_card
+    
+    mp_hands = mp.solutions.hands
+    hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
+    mp_drawing = mp.solutions.drawing_utils
+    
+    getComputerCamera(debug)
+    global sport 
+    sport = init_robot(debug, card)    
+    
+    getDogCamera(debug)
+    # if code != 0:
+    #     print("Get image sample error. code:", code)
+    # else:
+    #     # Capture an image
+    #     cv2.imwrite("front_image.jpg", image)
+
+
