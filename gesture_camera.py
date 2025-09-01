@@ -128,13 +128,21 @@ def process_hand(image_data: ndarray, image) -> None:
             # Draw hand landmarks
             mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Thumb state detection
+            # thumb finger (pollice)
             thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
             thumb_ip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
             arg = 'down' if thumb_tip.y > thumb_ip.y else 'up'
-            print(hand_landmarks)
             
-            #robot_exec(sport, debug, arg)
+            
+            # index finger (indice)
+            index_8 = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+            index_7 = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_DIP]
+            index_6 = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP]
+            
+            if (index_6.y < index_7.y and index_6.y < index_8.y and index_7.y < index_8.y) and thumb_tip.y > thumb_ip.y:
+                print("Prob heart")
+            
+            robot_exec(debug, arg)
 
         # Display image
         cv2.imshow("front_camera", image)
@@ -142,24 +150,7 @@ def process_hand(image_data: ndarray, image) -> None:
         if cv2.waitKey(20) == 27:
             exit(0)
 
-
-
-# def getCameraInput(debug: bool):
-#     if debug:
-        
-#         return getComputerCamera(debug)
-    
-#     try:
-#         client = VideoClient()  # Create a video client
-#         client.SetTimeout(3.0)
-#         client.Init()
-#     except Exception as e:
-#         print("C'è stato un problema con la telecamera del cane...\nErrore: {e}".format(e=e))
-#         exit(1)
-
-#     return client.GetImageSample()
-
-def robot_exec(sport: SportMode, debug: bool, arg: str) -> None:
+def robot_exec(debug: bool, arg: str) -> None: #sport: SportMode, 
 
     if debug:
         return
@@ -169,6 +160,7 @@ def robot_exec(sport: SportMode, debug: bool, arg: str) -> None:
 
     for i in range(cmd):
         if arg.lower() == cmd[i]:
+            print("sto esegunedo: {}".format(cmd[i]))
             cmd_f[i]()
             return
     
@@ -194,7 +186,6 @@ if __name__ == "__main__":
     mp_drawing = mp.solutions.drawing_utils
     
     getComputerCamera(debug)
-    global sport 
     sport = init_robot(debug, card)    
     
     getDogCamera(debug)
