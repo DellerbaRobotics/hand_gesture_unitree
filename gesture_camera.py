@@ -104,10 +104,11 @@ def getDogCamera(debug: bool) -> None:
         exit(1)
 
     code, data = client.GetImageSample()
-
+    print("Camera connessa codice: {}".format(code))
     while code == 0:
         # Get Image data from Go2 robot
         code, data = client.GetImageSample()
+        print(code)
         if code != 0:
             break
 
@@ -158,7 +159,7 @@ def robot_exec(debug: bool, arg: str) -> None: #sport: SportMode,
     cmd_f = [sport.StandUp, sport.StandDown]
     cmd   = ["up", "down"]
 
-    for i in range(cmd):
+    for i in range(len(cmd)):
         if arg.lower() == cmd[i]:
             print("sto esegunedo: {}".format(cmd[i]))
             cmd_f[i]()
