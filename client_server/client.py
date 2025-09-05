@@ -2,7 +2,13 @@ import socket
 import cv2
 import numpy as np
 
-# ipotetico socket già accettato
+print("Ciao")
+IP = "127.0.0.10"
+PORT = 5000
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((IP, PORT))
+s.listen("Sto aspettando la connessione dal cane: {}:{}".format(IP, PORT))
+
 conn, addr = s.accept()
 
 # Prima ricevi la lunghezza dell'immagine (es. 4 byte per la dimensione)

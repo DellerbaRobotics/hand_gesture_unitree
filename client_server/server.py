@@ -1,8 +1,8 @@
-from unitreesdk2.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitreesdk2.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
-from unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
-from unitreesdk2.unitree_sdk2py.go2.sport.sport_client import SportClient
-from unitreesdk2.unitree_sdk2py.go2.video.video_client import VideoClient
+from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
+from unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from unitree_sdk2py.go2.sport.sport_client import SportClient
+from unitree_sdk2py.go2.video.video_client import VideoClient
 from numpy import ndarray
 
 import sys, time, cv2, argparse
@@ -125,7 +125,7 @@ def getDogCamera(debug: bool) -> None:
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         _, img_encoded = cv2.imencode('.jpg', image)
-        conn.sendall(img_encoded.tobytes())
+        s.sendall(img_encoded.tobytes())
 
         process_hand(image_rgb, image)
 
@@ -155,7 +155,7 @@ def process_hand(image_data: ndarray, image) -> None:
             robot_exec(debug, arg)
 
         
-        conn.sendall(bytes(image))
+        s.sendall(bytes(image))
 
         if debug:
             # Display image
@@ -183,12 +183,6 @@ def robot_exec(debug: bool, arg: str) -> None: #sport: SportMode,
 if __name__ == "__main__":
     
     
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("127.0.0.1", 5000))
-    s.listen(1)
-
-    conn, addr = s.accept()
-    
     a = argparse.ArgumentParser(
         prog="Gesture Camera", 
         description="Con questo programma sarà possibile comandare il cane della unitree (go2) con il movimento delle mani", 
@@ -206,11 +200,16 @@ if __name__ == "__main__":
     hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
     mp_drawing = mp.solutions.drawing_utils
     
+    print("Ciao")
+    IP = "127.0.0.1"
+    PORT = 5000
 
-    with conn:
-        getComputerCamera(debug)
-        sport = init_robot(debug, card)    
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(IP, PORT)
+
+    getComputerCamera(debug)
+    sport = init_robot(debug, card)    
         
-        getDogCamera(debug)
+    getDogCamera(debug)
     
 
