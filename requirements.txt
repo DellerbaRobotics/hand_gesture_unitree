@@ -1,4 +1,0 @@
-cyclonedds==0.10.2
-opencv-python
-numpy
-mediapipe
