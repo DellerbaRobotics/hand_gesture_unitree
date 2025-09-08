@@ -22,4 +22,4 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip3.10 install flask
 
 
-ENTRYPOINT ["python3.10", "./gesture_camera.py"]
+ENTRYPOINT ["python3.10", "./client_server/server.py"]

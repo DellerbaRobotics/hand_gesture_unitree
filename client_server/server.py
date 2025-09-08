@@ -205,7 +205,7 @@ if __name__ == "__main__":
     PORT = 5000
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(IP, PORT)
+    s.connect((IP, PORT))
 
     getComputerCamera(debug)
     sport = init_robot(debug, card)    

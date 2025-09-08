@@ -3,11 +3,14 @@ import cv2
 import numpy as np
 
 print("Ciao")
-IP = "127.0.0.10"
+IP = "127.0.0.1"
 PORT = 5000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 s.bind((IP, PORT))
-s.listen("Sto aspettando la connessione dal cane: {}:{}".format(IP, PORT))
+s.listen(1)
+print("Sto aspettando la connessione dal cane: {}:{}".format(IP, str(PORT)))
+
 
 conn, addr = s.accept()
 
@@ -24,19 +27,20 @@ def recvall(sock, count):
     return buf
 
 # Ricevi prima la dimensione dell'immagine (in 4 byte)
-lengthbuf = recvall(conn, 4)
-length = int.from_bytes(lengthbuf, byteorder='big')
+with conn:
+    lengthbuf = recvall(conn, 4)
+    length = int.from_bytes(lengthbuf, byteorder='big')
 
-# Ricevi l'immagine vera e propria
-image_data = recvall(conn, length)
+    # Ricevi l'immagine vera e propria
+    image_data = recvall(conn, length)
 
-# Converti in array numpy
-nparr = np.frombuffer(image_data, np.uint8)
+    # Converti in array numpy
+    nparr = np.frombuffer(image_data, np.uint8)
 
-# Decodifica in immagine
-img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # Decodifica in immagine
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-# Mostra immagine
-cv2.imshow("Ricevuta", img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # Mostra immagine
+    cv2.imshow("Ricevuta", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
