@@ -4,7 +4,7 @@ import numpy as np
 
 print("Ciao")
 IP = "127.0.0.1"
-PORT = 5000
+PORT = 5001
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 s.bind((IP, PORT))
@@ -30,7 +30,7 @@ def recvall(sock, count):
 with conn:
     lengthbuf = recvall(conn, 4)
     length = int.from_bytes(lengthbuf, byteorder='big')
-
+    print(length)
     # Ricevi l'immagine vera e propria
     image_data = recvall(conn, length)
 
