@@ -1,8 +1,8 @@
-from unitreesdk2.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitreesdk2.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
-from unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
-from unitreesdk2.unitree_sdk2py.go2.sport.sport_client import SportClient
-from unitreesdk2.unitree_sdk2py.go2.video.video_client import VideoClient
+from gesture_recognition.unitreesdk2.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from gesture_recognition.unitreesdk2.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
+from gesture_recognition.unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from gesture_recognition.unitreesdk2.unitree_sdk2py.go2.sport.sport_client import SportClient
+from gesture_recognition.unitreesdk2.unitree_sdk2py.go2.video.video_client import VideoClient
 from numpy import ndarray
 
 import sys, time, cv2, argparse
@@ -145,11 +145,11 @@ def process_hand(image_data: ndarray, image) -> None:
             
             robot_exec(debug, arg)
 
-        # Display image
-        cv2.imshow("front_camera", image)
-        # Press ESC to stop
-        if cv2.waitKey(20) == 27:
-            exit(0)
+    # Display image
+    cv2.imshow("front_camera", image)
+    # Press ESC to stop
+    if cv2.waitKey(20) == 27:
+        exit(0)
 
 def robot_exec(debug: bool, arg: str) -> None: #sport: SportMode, 
 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         description="Con questo programma sarà possibile comandare il cane della unitree (go2) con il movimento delle mani", 
         epilog="Creato dall'IISS Luigi dell'erba")
     
-    a.add_argument("-internet_card", required=False, default="")
+    a.add_argument("-internet_card", required=False, default="eth0")
     a.add_argument("-d", "--debug", default=False)
 
     args = a.parse_args()
