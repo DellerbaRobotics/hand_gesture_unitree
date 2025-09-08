@@ -180,5 +180,8 @@ if __name__ == "__main__":
 
     if debug:
         useComputerCamera()
-    else:
-        useDogCamera(internet_card)
+        exit(0) 
+    
+    
+    useDogCamera(internet_card)
+    exit(0)
