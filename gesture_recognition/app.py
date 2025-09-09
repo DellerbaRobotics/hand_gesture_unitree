@@ -8,11 +8,10 @@ from prova2 import HandReader, DogState
 
 import sys, time, cv2, argparse
 import mediapipe as mp
+import os, warnings, mmap
 import numpy as np
-import mmap
-import os
 
-
+warnings.filterwarnings("ignore")
 ### CONSTANTS
 FRAME_PATH = "/stream/frame.raw"
 FRAMESIZE_FILE_PATH = "/stream/framesize.txt"
@@ -128,7 +127,7 @@ def useDogCamera(internet_card):
 
     with open(FRAMESIZE_FILE_PATH, "w") as f:
         print(f"{width=} {height=}")
-        f.write(width, height)
+        f.write("{width} {height}".format(width=width, height=height))
 
     with open(FRAME_PATH, "wb") as f:
         f.write(b'\x00' * frame_size)
@@ -164,6 +163,7 @@ def useDogCamera(internet_card):
 
 if __name__ == "__main__":
     
+
     a = argparse.ArgumentParser(
         prog="Gesture Camera", 
         description="Con questo programma sarà possibile comandare il cane della unitree (go2) con il movimento delle mani", 
@@ -177,6 +177,7 @@ if __name__ == "__main__":
     debug = args.debug
     internet_card = args.internet_card
 
+    print(debug, internet_card)
 
     if debug:
         useComputerCamera()

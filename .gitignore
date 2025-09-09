@@ -2,3 +2,4 @@
 /.venv
 /testPallina/venv_310
 /unitreesdk2
+/gesture_recognition/__pycache__

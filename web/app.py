@@ -10,7 +10,14 @@ FRAME_PATH = "/stream/frame.raw"
 FRAMESIZE_FILE_PATH = "/stream/framesize.txt"
 
 with open(FRAMESIZE_FILE_PATH, "r") as f:
-    width, height = map(int, f.readline().split(" "))
+    
+    try:
+        _width, _height = f.readline().strip().split(" ")
+    except:
+        exit(1)
+    width = int(_width)
+    height = int(_height)
+
 frame_size = width * height * 3
 
 def udp_video_receiver():
