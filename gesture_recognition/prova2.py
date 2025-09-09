@@ -36,6 +36,8 @@ def ConvTextToEnum(str):
         return DogState.HandOpen
     elif(str == "Closed_Fist"):
         return DogState.HandClose
+    elif(str == "Pointing_Up"):
+        return DogState.Point
     
 class HandReader():
     def __init__(self):

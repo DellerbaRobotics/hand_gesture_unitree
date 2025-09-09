@@ -1,20 +1,35 @@
 services:
   hand_gesture_unitree:
-    build: 
-      context: .
-      args:
-        - internet_card=eth0
+    build: ./gesture_recognition
     environment:
-      - DOCKER_BUILDKIT=1  
+      - DOCKER_BUILDKIT=1
+    devices:
+      - "/dev/video0:/dev/video0"
     networks:
       rete_cane:
-        ipv4_address: "192.168.123.2"
+        ipv4_address: "192.168.123.222"
+    volumes:
+      - shared_stream:/stream
+
+  web_interface:
+    build: ./web
+    environment:
+      - DOCKER_BUILDKIT=1
+    ports:
+      - "5000:5000"
+    volumes:
+      - shared_stream:/stream
+    # depends_on:
+    #   - hand_gesture_unitree
+
+volumes:
+  shared_stream:
 
 networks:
   rete_cane:
     driver: macvlan
     driver_opts:
-      parent: wlp0s12f0 # nome della tua interfaccia fisica
+      parent: ${NET_IFACE} # nome della tua interfaccia fisica
     ipam:
       config:
         - subnet: "192.168.123.0/24"

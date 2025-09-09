@@ -8,10 +8,12 @@ from prova2 import HandReader, DogState
 
 import sys, time, cv2, argparse
 import mediapipe as mp
-import os, warnings, mmap
 import numpy as np
+import mmap, warnings
+import threading
 
 warnings.filterwarnings("ignore")
+
 ### CONSTANTS
 FRAME_PATH = "/stream/frame.raw"
 FRAMESIZE_FILE_PATH = "/stream/framesize.txt"
@@ -70,12 +72,12 @@ class SportMode:
         self.client.Init()
 
         self.dog_moves = {
-            DogState.HandOpen: self.client.Hello(),
-            DogState.HandClose: self.client.FrontPounce(),
-            DogState.Vict: self.client.Heart(),
-            DogState.ThumbU: self.client.StandUp(),
-            DogState.ThumbD: self.client.StandDown(),
-            DogState.Point: self.client.Stretch(),
+            DogState.HandOpen: self.client.Hello,
+            DogState.HandClose: self.client.FrontPounce,
+            DogState.Vict: self.client.Heart,
+            DogState.ThumbU: self.client.StandUp,
+            DogState.ThumbD: self.client.StandDown,
+            DogState.Point: self.client.Stretch,
         }
 
     def GetInitState(self, robot_state: SportModeState_):
@@ -84,7 +86,8 @@ class SportMode:
         self.yaw0 = robot_state.imu_state.rpy[2]
 
     def move_dog(self, move):
-        self.dog_moves.get(move)()
+        if not move in (DogState.Zero, DogState.Empty):
+            self.dog_moves.get(move)()
 
 
 robot_state = unitree_go_msg_dds__SportModeState_()
@@ -120,14 +123,22 @@ def useDogCamera(internet_card):
     hand_reader = HandReader()
 
     # get sample image
-    code, data = client.GetImageSample()
-    # width, height = int(cap.get(3)), int(cap.get(4))
-    width, height = 1280, 720
+    code = -1
+    while code != 0:
+        code, data = client.GetImageSample()
+        print("errore immagine")
+   
+
+    # Convert to numpy image
+    image_data = np.frombuffer(bytes(data), dtype=np.uint8)
+    image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+
+    height, width = image.shape[:2]
     frame_size = width * height * 3  # BGR
 
     with open(FRAMESIZE_FILE_PATH, "w") as f:
         print(f"{width=} {height=}")
-        f.write("{width} {height}".format(width=width, height=height))
+        f.write(f"{width} {height}")
 
     with open(FRAME_PATH, "wb") as f:
         f.write(b'\x00' * frame_size)
@@ -135,35 +146,42 @@ def useDogCamera(internet_card):
     f = open(FRAME_PATH, "r+b")
     mm = mmap.mmap(f.fileno(), frame_size, access=mmap.ACCESS_WRITE)
 
+    t = None
+
     while True:
         # Get Image data from Go2 robot
         code, data = client.GetImageSample()
         if code != 0:
             print("Get image sample error. code:", code)
-            break
+            continue
 
-        # Convert to numpy image
-        image_data = np.frombuffer(bytes(data), dtype=np.uint8)
-        image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+        try:
+            # Convert to numpy image
+            image_data = np.frombuffer(bytes(data), dtype=np.uint8)
+            image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
 
-        frame = cv2.flip(image, 1)
-        annotated_frame = hand_reader.Start(frame)
+            frame = cv2.flip(image, 1)
+            annotated_frame = hand_reader.Start(frame)
 
-        # write frame
-        mm.seek(0)
-        mm.write(annotated_frame.tobytes())
+            # write frame
+            mm.seek(0)
+            mm.write(annotated_frame.tobytes())
 
-        if(dog_state != hand_reader.dog_state):
-            dog_state = hand_reader.dog_state
-            sport.move_dog(dog_state)
-    
+            if(dog_state != hand_reader.dog_state):
+                dog_state = hand_reader.dog_state
+                
+                if t is None or not t.is_alive():
+                    t = threading.Thread(target=sport.move_dog, args=(dog_state,))
+                    t.daemon = True
+                    t.start()
+        except cv2.error as e:
+            print(e)
+            continue
     f.close()
 
 
 
 if __name__ == "__main__":
-    
-
     a = argparse.ArgumentParser(
         prog="Gesture Camera", 
         description="Con questo programma sarà possibile comandare il cane della unitree (go2) con il movimento delle mani", 
@@ -177,12 +195,8 @@ if __name__ == "__main__":
     debug = args.debug
     internet_card = args.internet_card
 
-    print(debug, internet_card)
 
     if debug:
         useComputerCamera()
-        exit(0) 
-    
-    
-    useDogCamera(internet_card)
-    exit(0)
+    else:
+        useDogCamera(internet_card)
