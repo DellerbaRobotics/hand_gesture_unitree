@@ -3,13 +3,10 @@
 #Descrizione: programma che riconosce i gesti di una mana classificandoli in n Tipi
 
 
-from matplotlib import pyplot as plt
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
 import cv2
-import math
 import enum
-import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 

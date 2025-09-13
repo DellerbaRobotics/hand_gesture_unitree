@@ -3,6 +3,7 @@ services:
     build: ./gesture_recognition
     environment:
       - DOCKER_BUILDKIT=1
+      - DEBUG=0
     devices:
       - "/dev/video0:/dev/video0"
     networks:
@@ -10,6 +11,16 @@ services:
         ipv4_address: "192.168.123.222"
     volumes:
       - shared_stream:/stream
+
+      # solo nel development
+      - ./gesture_recognition/app.py:/app/app.py
+      - ./gesture_recognition/hand_reader.py:/app/hand_reader.py
+      - ./gesture_recognition/gesture_recognizer.task:/app/gesture_recognizer.task
+      - ./gesture_recognition/requirements.txt:/app/requirements.txt
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python"]
+      interval: 5s
+      retries: 5
 
   web_interface:
     build: ./web
@@ -20,10 +31,15 @@ services:
     volumes:
       - shared_stream:/stream
     depends_on:
-      - hand_gesture_unitree
+      hand_gesture_unitree:
+        condition: service_healthy
 
 volumes:
   shared_stream:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
 
 networks:
   rete_cane:
