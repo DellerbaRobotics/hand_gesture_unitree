@@ -19,8 +19,8 @@ services:
       - "5000:5000"
     volumes:
       - shared_stream:/stream
-    # depends_on:
-    #   - hand_gesture_unitree
+    depends_on:
+      - hand_gesture_unitree
 
 volumes:
   shared_stream:

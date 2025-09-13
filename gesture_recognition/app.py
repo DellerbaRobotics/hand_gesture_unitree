@@ -1,13 +1,11 @@
 from unitreesdk2.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
 from unitreesdk2.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
-from unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from unitreesdk2.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_, LowState_, BmsState_
 from unitreesdk2.unitree_sdk2py.go2.sport.sport_client import SportClient
 from unitreesdk2.unitree_sdk2py.go2.video.video_client import VideoClient
-from numpy import ndarray
 from prova2 import HandReader, DogState
 
 import sys, time, cv2, argparse
-import mediapipe as mp
 import numpy as np
 import mmap, warnings
 import threading
@@ -76,7 +74,7 @@ class SportMode:
             DogState.HandClose: self.client.FrontPounce,
             DogState.Vict: self.client.Heart,
             DogState.ThumbU: self.client.StandUp,
-            DogState.ThumbD: self.client.StandDown,
+            DogState.ThumbD: self.client.Damp,
             DogState.Point: self.client.Stretch,
         }
 
@@ -95,6 +93,12 @@ def HighStateHandler(msg: SportModeState_):
     global robot_state
     robot_state = msg
 
+battery_level = -1
+def BmsStateHandler(msg: LowState_):
+    global battery_level
+    battery_state: BmsState_ = msg.bms_state
+    battery_level = int(battery_state.soc)   
+
 def useDogCamera(internet_card):
     try:
         ChannelFactoryInitialize(0, internet_card)
@@ -102,8 +106,14 @@ def useDogCamera(internet_card):
         print(f"Non è stato possibile collegarsi al cane usando la interfaccia di rete fornita ({internet_card})\n errore di digitazione o di configurazione? chi lo sà :)")
         sys.exit(1)
     
+    # Connection to sport node
     sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
     sub.Init(HighStateHandler, 10)
+
+    # Connection to low level node
+    sub_battery = ChannelSubscriber("rt/lowstate", LowState_)
+    sub_battery.Init(BmsStateHandler, 10)
+
     time.sleep(1)
 
     sport = SportMode()
@@ -148,6 +158,7 @@ def useDogCamera(internet_card):
 
     t = None
 
+    global battery_level
     while True:
         # Get Image data from Go2 robot
         code, data = client.GetImageSample()
@@ -162,6 +173,16 @@ def useDogCamera(internet_card):
 
             frame = cv2.flip(image, 1)
             annotated_frame = hand_reader.Start(frame)
+
+            if battery_level < 25:
+                battery_color = (0, 0, 255)
+            elif battery_level < 60:
+                battery_color = (0, 165, 255)
+            else:
+                battery_color = (0, 255, 0)
+
+            cv2.putText(annotated_frame, str(battery_level) + '%', (width-100, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, battery_color, 2, cv2.LINE_AA)
 
             # write frame
             mm.seek(0)
