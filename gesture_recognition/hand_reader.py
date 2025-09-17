@@ -1,72 +1,150 @@
-#autore Luigi Loliva
-#autore Luca Luisi
-#data 16/09/25
-#Descrizione: programma che riconosce i gesti di una mana classificandoli in n Tipi
+# Authors: Luigi Loliva, Luca Luisi
+# Date: 09/25/2016
+# Description: Program for hand gesture recognition, classifying them into different types.
 
+import mediapipe as mp  # Import MediaPipe library for hand recognition
+from mediapipe.framework.formats import landmark_pb2  # Import hand landmark format
+from mediapipe.tasks import python  # Import MediaPipe tasks for Python
+from mediapipe.tasks.python import vision  # Import MediaPipe vision tasks
+import cv2  # Import OpenCV for image and video processing
+import enum  # Import enum module for creating enumerations
 
-import mediapipe as mp
-from mediapipe.framework.formats import landmark_pb2
-import cv2
-import enum
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-
-#enum con gli stati del cane
+# Enum with dog states (recognized gestures)
 class DogState(enum.Enum):
-    Vict = 0
-    ThumbU = 1
-    ThumbD = 2
-    Point = 3
-    HandClose = 4
-    HandOpen = 5
-    Empty = 6
-    Zero = 7
+    Vict = 0        # Victory gesture
+    ThumbU = 1      # Thumbs up
+    ThumbD = 2      # Thumbs down
+    Point = 3       # Pointing up
+    HandClose = 4   # Closed hand
+    HandOpen = 5    # Open hand
+    Empty = 6       # No gesture
+    Zero = 7        # Zero/none state
 
-#converte l'enum dal testo
+# Converts a string to a DogState enum value
 def ConvTextToEnum(str):
+    # Check if the gesture is "Victory"
     if(str == "Victory"):
         return DogState.Vict
+    # Check if the gesture is "None"
     elif(str == "None"):
         return DogState.Zero
+    # Check if the gesture is "Thumb_Up"
     elif(str == "Thumb_Up"):
         return DogState.ThumbU
+    # Check if the gesture is "Thumb_Down"
     elif(str == "Thumb_Down"):
         return DogState.ThumbD
+    # Check if the gesture is "Open_Palm"
     elif(str == "Open_Palm"):
         return DogState.HandOpen
+    # Check if the gesture is "Closed_Fist"
     elif(str == "Closed_Fist"):
         return DogState.HandClose
+    # Check if the gesture is "Pointing_Up"
     elif(str == "Pointing_Up"):
         return DogState.Point
     
+# Main class for hand reading and recognition
 class HandReader():
+    """
+    HandReader is a gesture recognition class that uses MediaPipe and a gesture recognition model
+    to detect hand gestures from images or video frames. It manages the state of recognized gestures,
+    annotates images with gesture information and hand landmarks, and tracks gesture changes.
+    Attributes:
+        dog_state (DogState): Current state of the recognized gesture.
+        count (int): Counter for gesture changes.
+        lastGesture (str): Name of the last recognized gesture.
+        mp_hands: MediaPipe Hands solution module.
+        mp_drawing: MediaPipe drawing utilities.
+        mp_drawing_styles: MediaPipe drawing styles.
+        base_options: Base options for the gesture recognizer.
+        options: Gesture recognizer options.
+        recognizer: Gesture recognizer instance.
+    Methods:
+        __init__():
+            Initializes the HandReader, MediaPipe Hands, and gesture recognizer.
+        display_single_image_with_gesture_and_hand_landmarks(image_bgr, result):
+            Processes a single image, draws detected hand landmarks and connections,
+            annotates the image with the recognized gesture name and confidence,
+            and updates gesture state logic.
+            Args:
+                image_bgr (np.ndarray): Input image in BGR format.
+                result (tuple): Tuple containing the top gesture and list of hand landmarks.
+            Returns:
+                np.ndarray: Annotated image with gesture and hand landmarks.
+        Start(frame):
+            Starts gesture recognition on the given frame, annotates the frame with gesture
+            information or a message if no gesture is detected, and updates gesture state.
+            Args:
+                frame (np.ndarray): Input video frame in BGR format.
+            Returns:
+                np.ndarray: Annotated frame with gesture information.
+    """
 
     def __init__(self):
-        self.dog_state = DogState.Empty #imposto lo stato a vuoto
-        self.count = 0
-        #variabile che memorizza l'ultimo gesto
-        self.lastGesture = "ciao"
+        """
+        Initializes the HandReader class.
 
-        # Inizializza MediaPipe
+        Sets up the initial state for gesture recognition, including:
+        - Setting the dog's state to empty.
+        - Initializing a counter for gesture changes.
+        - Storing the last recognized gesture.
+        - Initializing MediaPipe Hands and drawing utilities.
+        - Loading and configuring the gesture recognizer model.
+
+        Attributes:
+            dog_state (DogState): The current state of the dog, initially set to empty.
+            count (int): Counter for the number of gesture changes detected.
+            lastGesture (str): The last recognized gesture.
+            mp_hands: MediaPipe Hands solution for hand tracking.
+            mp_drawing: MediaPipe drawing utility for rendering hand landmarks.
+            mp_drawing_styles: MediaPipe drawing styles for hand landmarks.
+            base_options: Base options for the gesture recognizer model.
+            options: Gesture recognizer configuration options.
+            recognizer: Gesture recognizer instance for detecting hand gestures.
+        """
+        self.dog_state = DogState.Empty # Set initial state to empty
+        self.count = 0  # Counter for gesture changes
+        self.lastGesture = "ciao"  # Stores the last recognized gesture
+
+        # Initialize MediaPipe Hands
         self.mp_hands = mp.solutions.hands
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
-        # Inizializza il riconoscitore
+        # Initialize gesture recognizer
         self.base_options = python.BaseOptions(model_asset_path='gesture_recognizer.task')
         self.options = vision.GestureRecognizerOptions(base_options=self.base_options)
         self.recognizer = vision.GestureRecognizer.create_from_options(self.options)
     
-    # Funzione per elaborare una singola immagine (frame) con gesture e landmarks
+    # Processes a single image, draws gesture and landmarks
     def display_single_image_with_gesture_and_hand_landmarks(self, image_bgr, result):
-        gesture, hand_landmarks_list = result
-        annotated_image = image_bgr.copy()
-        for hand_landmarks in hand_landmarks_list:
-            hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        """
+        Annotates a single BGR image with detected hand landmarks and recognized gesture information.
+        Args:
+            image_bgr (np.ndarray): The input image in BGR format to be annotated.
+            result (Tuple[Gesture, List[List[Landmark]]]): A tuple containing the recognized gesture and a list of hand landmarks.
+                - gesture: An object with 'category_name' (str) and 'score' (float) attributes representing the gesture name and confidence.
+                - hand_landmarks_list: A list of lists, where each inner list contains landmark objects (with x, y, z attributes) for a detected hand.
+        Returns:
+            np.ndarray: The annotated image with hand landmarks, connections, and gesture information drawn.
+        Side Effects:
+            - Updates internal state variables (`lastGesture`, `dog_state`, `count`) based on gesture recognition logic.
+            - Prints the recognized gesture name to the console when a new valid gesture is detected.
+        Notes:
+            - Draws hand landmarks and connections using MediaPipe drawing utilities.
+            - Displays the gesture name and confidence score on the image.
+            - Handles gesture state transitions for further application logic.
+        """
+        gesture, hand_landmarks_list = result  # Extract gesture and landmarks
+        annotated_image = image_bgr.copy()  # Copy image for annotation
+        for hand_landmarks in hand_landmarks_list:  # For each detected hand
+            hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()  # Create normalized landmark list
             hand_landmarks_proto.landmark.extend([
                 landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in hand_landmarks
             ])
 
+            # Draw landmarks and connections on the hand
             self.mp_drawing.draw_landmarks(
                 annotated_image,
                 hand_landmarks_proto,
@@ -75,79 +153,97 @@ class HandReader():
                 self.mp_drawing_styles.get_default_hand_connections_style()
             )
 
-
-        # Sovrascrivi il testo del gesto riconosciuto
+        # Write recognized gesture name and confidence on the image
         title = f"{gesture.category_name} ({gesture.score:.2f})"
         cv2.putText(annotated_image, title, (30, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
         
-        #controllo se il gesto supera il livello di confidenza e se è diverso dall'ultimo
-        #primo gesto valido
-        if(gesture.score > 0.50 and self.dog_state == DogState.Empty):
+        # Logic to handle gesture change and state
+        if(gesture.score > 0.50 and self.dog_state == DogState.Empty):  # First valid gesture
             self.lastGesture = gesture.category_name
-
             self.dog_state = ConvTextToEnum(gesture.category_name)
-
             print(gesture.category_name)
-
             self.count = 0
-        elif(gesture.score > 0.50 and self.dog_state != ConvTextToEnum(gesture.category_name)):
-            #cambio di gesto
+        elif(gesture.score > 0.50 and self.dog_state != ConvTextToEnum(gesture.category_name)):  # Gesture change
             self.lastGesture = gesture.category_name
-
             self.dog_state = ConvTextToEnum(gesture.category_name)
-
-        elif(self.dog_state == ConvTextToEnum(gesture.category_name)):
-            #non ce stato un cambiamento di gesto
+        elif(self.dog_state == ConvTextToEnum(gesture.category_name)):  # No gesture change
             ...
-        elif ConvTextToEnum(gesture.category_name) == DogState.Zero and self.dog_state != DogState.Zero:
+        elif ConvTextToEnum(gesture.category_name) == DogState.Zero and self.dog_state != DogState.Zero:  # "None" gesture
             self.dog_state = DogState.Zero
         # elif(self.count == 0):
-        #     print(f"non ci sono variazioni l'ultimo gesto è {self.lastGesture}")
+        #     print(f"no changes, last gesture is {self.lastGesture}")
         #     self.count += 1
-        return annotated_image
+        return annotated_image  # Return annotated image
     
+    # Starts recognition on the given frame
     def Start(self, frame):
-        # Converti da BGR a RGB per MediaPipe
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+        """
+        Processes a video frame to detect and recognize hand gestures using MediaPipe.
 
-        # Esegui il riconoscimento
-        recognition_result = self.recognizer.recognize(mp_image)
-        if recognition_result.gestures:
-            top_gesture = recognition_result.gestures[0][0]
-            hand_landmarks = recognition_result.hand_landmarks
+        Args:
+            frame (numpy.ndarray): The input video frame in BGR format.
+
+        Returns:
+            numpy.ndarray: The annotated frame with gesture and hand landmarks if detected,
+                           or with a "No gesture detected" message otherwise.
+
+        Workflow:
+            - Converts the input frame from BGR to RGB.
+            - Creates a MediaPipe image object from the RGB frame.
+            - Performs gesture recognition on the image.
+            - If a gesture is detected:
+                - Retrieves the gesture with the highest confidence and hand landmarks.
+                - Annotates the frame with gesture and hand landmarks.
+            - If no gesture is detected:
+                - Annotates the frame with a "No gesture detected" message.
+                - Updates internal state variables (`lastGesture` and `dog_state`) if necessary.
+        """
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)  # Create MediaPipe image object
+
+        recognition_result = self.recognizer.recognize(mp_image)  # Perform recognition
+        if recognition_result.gestures:  # If gestures are recognized
+            top_gesture = recognition_result.gestures[0][0]  # Get gesture with highest confidence
+            hand_landmarks = recognition_result.hand_landmarks  # Get hand landmarks
             annotated_frame = self.display_single_image_with_gesture_and_hand_landmarks(frame, (top_gesture, hand_landmarks))
-        else:
+        else:  # No gesture detected
             annotated_frame = frame.copy()
-            cv2.putText(annotated_frame, "Nessun gesto rilevato", (30, 50),
+            cv2.putText(annotated_frame, "No gesture detected", (30, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
             if(self.dog_state != DogState.Empty):
                 self.lastGesture = "empty"
                 self.dog_state = DogState.Empty
-                print("nessun gesto")
-        return annotated_frame
+                print("no gesture")
+        return annotated_frame  # Return annotated frame
 
+# Main function
 def main():
-    hR = HandReader() #crea l'oggetto hR
-    # Avvia webcam
-    cam = cv2.VideoCapture(0)
-    print("Premi 'q' per uscire.")
+    """
+    Main function to start real-time hand gesture recognition using webcam.
+
+    - Initializes a HandReader object for gesture analysis.
+    - Opens the default webcam for video capture.
+    - Continuously reads frames from the webcam, flips them horizontally, and processes them for gesture recognition.
+    - Displays the annotated frames in a window titled 'Gesture Recognition'.
+    - Exits the loop and releases resources when 'q' is pressed or if there is an error reading from the camera.
+    """
+    hR = HandReader()  # Create HandReader object
+    cam = cv2.VideoCapture(0)  # Start webcam
+    print("Press 'q' to exit.")
     while True:
-        ret, frame = cam.read() #legge il frame
+        ret, frame = cam.read()  # Read frame from webcam
         if not ret:
-            print("Errore nella lettura della videocamera.")
+            print("Error reading from camera.")
             break
-        frame = cv2.flip(frame, 1)
-        annotated_frame = hR.Start(frame) #inizio analisi del frame
-        # Mostra l'immagine
-        cv2.imshow('Gesture Recognition', annotated_frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        frame = cv2.flip(frame, 1)  # Flip frame horizontally
+        annotated_frame = hR.Start(frame)  # Analyze frame for gesture recognition
+        cv2.imshow('Gesture Recognition', annotated_frame)  # Show annotated frame
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Exit if 'q' is pressed
             break
-    # Pulisci
-    cam.release()
-    cv2.destroyAllWindows()
+    cam.release()  # Release webcam
+    cv2.destroyAllWindows()  # Close all windows
 
-
+# Start program if run as main script
 if __name__ == "__main__":
-    main() 
+    main()
