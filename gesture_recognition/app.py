@@ -329,7 +329,7 @@ def useDogCamera(internet_card):
 
 
 if __name__ == "__main__":  # Entry point for the script
-    debug = os.getenv("DEBUG", 0)  # Get DEBUG environment variable (default to 0 if not set)
+    debug = int(os.getenv("DEBUG", 0))  # Get DEBUG environment variable (default to 0 if not set)
     internet_card = "eth0"  # Set default network interface for robot connection
 
     if debug:  # If debug mode is enabled
