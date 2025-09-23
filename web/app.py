@@ -12,8 +12,8 @@ import cv2 # Import OpenCV for image encoding and processing
 app = Flask(__name__) # Create a Flask application instance
 
 ### CONSTANTS
-FRAME_PATH = "/stream/frame.raw"
-FRAMESIZE_FILE_PATH = "/stream/framesize.txt"
+FRAME_PATH = "/stream/frame.raw" # Path to the memory-mapped file containing raw video frames
+FRAMESIZE_FILE_PATH = "/stream/framesize.txt" # Path to the file containing frame size (width and height)
 
 # Open the file containing the frame size (width and height) in read mode
 with open(FRAMESIZE_FILE_PATH, "r") as f:
@@ -61,9 +61,10 @@ def video_receiver():
                 break  # Exit the loop if an error occurs
 
 
-@app.route('/video')
+@app.route('/video') # Define the route for video streaming
 def video():
-    return Response(video_receiver(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Define the route for video streaming
+    return Response(video_receiver(), mimetype='multipart/x-mixed-replace; boundary=frame') # Return a streaming response with the appropriate MIME type for multipart JPEG
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000) # Run the Flask app on all interfaces at port 5000

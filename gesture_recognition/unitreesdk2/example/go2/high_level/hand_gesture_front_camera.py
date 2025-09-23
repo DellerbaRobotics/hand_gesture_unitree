@@ -1,3 +1,16 @@
+"""
+hand_gesture_front_camera.py
+
+This script demonstrates how to control a Unitree Go2 robot using hand gestures detected from the front camera feed. It utilizes MediaPipe for hand gesture recognition and OpenCV for image processing. The robot can be commanded to stand up or stand down based on the thumb gesture (up or down).
+The script initializes a SportClient to communicate with the robot and a VideoClient to access the front camera feed. It processes the video frames in real-time, detects hand landmarks, and interprets the thumb position to issue commands to the robot.
+The script includes the following key components:
+- SportModeTest class: Manages robot state and commands (stand up/down).
+- HighStateHandler function: Updates the robot's state based on incoming messages.
+- Main execution block: Initializes clients, processes video frames, detects hand gestures, and controls the robot accordingly.
+- The script captures and displays the video feed with hand landmarks drawn on it, allowing for visual feedback of the gesture recognition process.
+
+""" 
+
 import time  # Import time module for sleep and timing
 import sys  # Import sys module for command-line arguments
 from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize  # Import channel classes for robot communication
