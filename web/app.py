@@ -38,27 +38,27 @@ def video_receiver():
     Raises:
         Exception: If an error occurs during frame reading or processing, the exception is printed and the generator stops.
     """
-    with open(FRAME_PATH, "r+b") as f:
-        mm = mmap.mmap(f.fileno(), frame_size, access=mmap.ACCESS_READ)
+    with open(FRAME_PATH, "r+b") as f:  # Open the raw frame file in read/write binary mode
+        mm = mmap.mmap(f.fileno(), frame_size, access=mmap.ACCESS_READ)  # Memory-map the file for efficient access
 
-        last_frame = None
-        while True:
+        last_frame = None  # Initialize variable to store the previous frame
+        while True:  # Infinite loop to continuously read frames
             try:
-                mm.seek(0)
-                data = mm.read(frame_size)
-                frame = np.frombuffer(data, dtype=np.uint8).reshape((height, width, 3))
+                mm.seek(0)  # Move to the beginning of the memory-mapped file
+                data = mm.read(frame_size)  # Read a chunk of bytes corresponding to one frame
+                frame = np.frombuffer(data, dtype=np.uint8).reshape((height, width, 3))  # Convert bytes to NumPy array and reshape to image
 
-                if last_frame is not None and np.array_equal(frame, last_frame):
-                    continue
-                last_frame = frame
+                if last_frame is not None and np.array_equal(frame, last_frame):  # Check if current frame is identical to previous
+                    continue  # Skip processing if frame hasn't changed
+                last_frame = frame  # Update last_frame with current frame
 
-                _, buffer = cv2.imencode('.jpg', frame)
+                _, buffer = cv2.imencode('.jpg', frame)  # Encode the frame as JPEG using OpenCV
                 yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')  # Yield the encoded frame in multipart HTTP format
                 
-            except Exception as e:
-                print("Errore ricezione:", e)
-                break
+            except Exception as e:  # Handle any exceptions during frame reading or processing
+                print("Errore ricezione:", e)  # Print the error message
+                break  # Exit the loop if an error occurs
 
 
 @app.route('/video')
